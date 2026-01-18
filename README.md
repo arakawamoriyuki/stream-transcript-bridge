@@ -1,61 +1,64 @@
 # meet-transcript-bridge
 
-Google Meet の音声をリアルタイムで文字起こし・翻訳し、Slack に投稿する Chrome 拡張機能。
+[English](./README.md) | [日本語](./README.ja.md)
 
-## 概要
+A Chrome Extension that transcribes Google Meet audio in real-time and posts to Slack.
 
-この Chrome 拡張機能は Google Meet の会議音声をキャプチャし、以下の機能を提供します：
+## Overview
 
-- **リアルタイム文字起こし**: OpenAI Whisper API による音声認識
-- **AI による翻訳・要約**: GPT による処理
-- **Slack 連携**: 会議内容をリアルタイムで Slack に共有
+This Chrome extension captures audio from Google Meet meetings and provides:
 
-## 処理フロー
+- **Real-time transcription**: Speech recognition via OpenAI Whisper API
+- **AI-powered translation/summarization**: Processing via GPT
+- **Slack integration**: Share meeting content to Slack in real-time
 
-1. **音声キャプチャ**: Google Meet タブから音声を一定間隔（例: 10秒）のチャンクで取得
-2. **文字起こし**: 各チャンクを OpenAI Whisper API に送信してテキスト化
-3. **バッファリング**: チャンク境界で文章が途切れるため、未完成の文はバッファに保持
-4. **文章完成時に投稿**: 文章として成立したタイミングでリアルタイムに Slack へ投稿
-5. **翻訳・要約（オプション）**: 投稿前に GPT で翻訳や要約処理を実行可能
+## Processing Flow
+
+1. **Audio Capture**: Capture audio from Google Meet tab in chunks (e.g., every 10 seconds)
+2. **Transcription**: Send each chunk to OpenAI Whisper API for text conversion
+3. **Buffering**: Hold incomplete sentences in buffer when chunk boundaries cut mid-sentence
+4. **Post on Completion**: Post to Slack in real-time when a complete sentence is formed
+5. **Translation/Summarization (optional)**: Process with GPT before posting
 
 ```
 ┌─────────────────┐     ┌──────────────┐     ┌─────────────┐
 │  Google Meet    │────▶│   Chrome     │────▶│  OpenAI     │
 │  (Tab Audio)    │     │   Extension  │     │  Whisper    │
-│                 │  10秒チャンク       │     │             │
+│                 │  10sec chunks      │     │             │
 └─────────────────┘     └──────────────┘     └─────────────┘
                                                     │
                               ┌─────────────────────┘
                               ▼
                         ┌───────────┐
-                        │  Buffer   │ ◀── 未完成の文を保持
+                        │  Buffer   │ ◀── Holds incomplete sentences
                         └───────────┘
                               │
-                              ▼ (文章が完成したタイミング)
+                              ▼ (when sentence is complete)
 ┌─────────────────┐     ┌──────────────┐
 │     Slack       │◀────│   GPT        │
-│    Webhook      │     │  翻訳/要約    │
+│    Webhook      │     │  Translate/  │
+│                 │     │  Summarize   │
 └─────────────────┘     └──────────────┘
 ```
 
-## インストール
+## Installation
 
-1. このリポジトリをクローン
-2. `yarn install` で依存関係をインストール
-3. `yarn build` で拡張機能をビルド
-4. Chrome で `chrome://extensions/` を開く
-5. 「デベロッパーモード」を有効化
-6. 「パッケージ化されていない拡張機能を読み込む」から `dist` フォルダを選択
+1. Clone this repository
+2. Run `yarn install` to install dependencies
+3. Run `yarn build` to build the extension
+4. Open Chrome and navigate to `chrome://extensions/`
+5. Enable "Developer mode"
+6. Click "Load unpacked" and select the `dist` folder
 
-## 設定
+## Configuration
 
-初回起動時、ポップアップで以下の入力を求められます：
+On first launch, the extension popup will prompt you to enter:
 
-- **OpenAI API Key**: Whisper / GPT API 用
-- **Slack Webhook URL**: Slack 投稿用
+- **OpenAI API Key**: For Whisper / GPT APIs
+- **Slack Webhook URL**: For posting to Slack
 
-入力された値は `chrome.storage.local` に保存されます。
+These credentials are stored in `chrome.storage.local`.
 
-## 開発
+## Development
 
-詳細は [CLAUDE.md](./CLAUDE.md) を参照してください。
+See [CLAUDE.md](./CLAUDE.md) for detailed development instructions.
