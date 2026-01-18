@@ -1,2 +1,61 @@
 # meet-transcript-bridge
-Bridge Google Meet audio transcripts to real-time AI summaries and translations, delivered to Slack.
+
+Google Meet の音声をリアルタイムで文字起こし・翻訳し、Slack に投稿する Chrome 拡張機能。
+
+## 概要
+
+この Chrome 拡張機能は Google Meet の会議音声をキャプチャし、以下の機能を提供します：
+
+- **リアルタイム文字起こし**: OpenAI Whisper API による音声認識
+- **AI による翻訳・要約**: GPT による処理
+- **Slack 連携**: 会議内容をリアルタイムで Slack に共有
+
+## 処理フロー
+
+1. **音声キャプチャ**: Google Meet タブから音声を一定間隔（例: 10秒）のチャンクで取得
+2. **文字起こし**: 各チャンクを OpenAI Whisper API に送信してテキスト化
+3. **バッファリング**: チャンク境界で文章が途切れるため、未完成の文はバッファに保持
+4. **文章完成時に投稿**: 文章として成立したタイミングでリアルタイムに Slack へ投稿
+5. **翻訳・要約（オプション）**: 投稿前に GPT で翻訳や要約処理を実行可能
+
+```
+┌─────────────────┐     ┌──────────────┐     ┌─────────────┐
+│  Google Meet    │────▶│   Chrome     │────▶│  OpenAI     │
+│  (Tab Audio)    │     │   Extension  │     │  Whisper    │
+│                 │  10秒チャンク       │     │             │
+└─────────────────┘     └──────────────┘     └─────────────┘
+                                                    │
+                              ┌─────────────────────┘
+                              ▼
+                        ┌───────────┐
+                        │  Buffer   │ ◀── 未完成の文を保持
+                        └───────────┘
+                              │
+                              ▼ (文章が完成したタイミング)
+┌─────────────────┐     ┌──────────────┐
+│     Slack       │◀────│   GPT        │
+│    Webhook      │     │  翻訳/要約    │
+└─────────────────┘     └──────────────┘
+```
+
+## インストール
+
+1. このリポジトリをクローン
+2. `yarn install` で依存関係をインストール
+3. `yarn build` で拡張機能をビルド
+4. Chrome で `chrome://extensions/` を開く
+5. 「デベロッパーモード」を有効化
+6. 「パッケージ化されていない拡張機能を読み込む」から `dist` フォルダを選択
+
+## 設定
+
+初回起動時、ポップアップで以下の入力を求められます：
+
+- **OpenAI API Key**: Whisper / GPT API 用
+- **Slack Webhook URL**: Slack 投稿用
+
+入力された値は `chrome.storage.local` に保存されます。
+
+## 開発
+
+詳細は [CLAUDE.md](./CLAUDE.md) を参照してください。
