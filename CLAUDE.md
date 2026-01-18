@@ -46,6 +46,7 @@ src/
 yarn install         # 依存関係インストール
 yarn dev             # ビルド監視モード（popup/content scriptはHMR対応）
 yarn build           # 本番ビルド
+yarn test            # テスト実行
 yarn lint            # ESLint 実行
 yarn type-check      # TypeScript 型チェック
 ```
