@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
 import { copyFileSync, mkdirSync, renameSync, existsSync, rmSync } from 'fs';
+import vue from '@vitejs/plugin-vue';
 
 export default defineConfig({
   build: {
@@ -32,6 +33,7 @@ export default defineConfig({
     },
   },
   plugins: [
+    vue(),
     {
       name: 'chrome-extension-build',
       closeBundle() {

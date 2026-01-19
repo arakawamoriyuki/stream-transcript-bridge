@@ -1,7 +1,10 @@
-// Hello World popup script
-console.log('Meet Transcript Bridge popup loaded!');
+import { createApp } from 'vue';
+import { createPinia } from 'pinia';
+import App from './App.vue';
+import './styles.css';
 
-// Chrome Extension の動作確認
-if (chrome?.storage) {
-  console.log('Chrome Extension API is available');
-}
+const app = createApp(App);
+const pinia = createPinia();
+
+app.use(pinia);
+app.mount('#app');
