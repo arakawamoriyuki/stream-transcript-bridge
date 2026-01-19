@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Meet Transcript Bridge",
+  "version": "0.1.0",
+  "description": "Google Meet の音声をリアルタイムで文字起こし・要約・翻訳し、Slack に投稿する Chrome 拡張機能",
+  "permissions": [
+    "storage",
+    "tabCapture"
+  ],
+  "host_permissions": [
+    "https://meet.google.com/*"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  }
+}

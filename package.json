@@ -1,0 +1,32 @@
+{
+  "name": "meet-transcript-bridge",
+  "version": "0.1.0",
+  "description": "Google Meet の音声をリアルタイムで文字起こし・要約・翻訳し、Slack に投稿する Chrome 拡張機能",
+  "type": "module",
+  "scripts": {
+    "dev": "vite build --watch",
+    "build": "vite build",
+    "test": "echo \"Test not yet implemented\" && exit 0",
+    "lint": "eslint src --ext .ts,.tsx",
+    "type-check": "tsc --noEmit"
+  },
+  "keywords": [
+    "chrome-extension",
+    "google-meet",
+    "transcription",
+    "openai",
+    "slack"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/chrome": "^0.0.256",
+    "@types/node": "^20.10.6",
+    "@typescript-eslint/eslint-plugin": "^6.17.0",
+    "@typescript-eslint/parser": "^6.17.0",
+    "eslint": "^8.56.0",
+    "prettier": "^3.1.1",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.10"
+  }
+}
