@@ -320,12 +320,13 @@ OpenAI API キー1つで Whisper（文字起こし）と GPT（翻訳・要約�
 - [x] テスト追加（13 個 - 累計 55 個）
 
 ### Phase 8: GPT + Slack
-- [ ] GPT API クライアント（翻訳・要約）
-- [ ] Slack Webhook 連携
+- [x] GPT API クライアント実装（`src/infrastructure/openai/GptClient.ts`）
+- [x] Slack Webhook クライアント実装（`src/infrastructure/slack/SlackClient.ts`）
+- [x] Background で文章完成時に翻訳 → Slack 投稿を統合
 - [ ] エンドツーエンドの動作確認
 
 ### その他
-- [ ] マイク権限の事前取得（Popup から）
+- [ ] マイク権限の事前取得（Popup から）- 検討した結果、録音中に状態表示する方式に変更
 - [ ] 話者分離の調査・実装（優先度: 中）
 - [ ] エラーハンドリング・リトライ処理
 - [ ] E2E テスト（Playwright）
