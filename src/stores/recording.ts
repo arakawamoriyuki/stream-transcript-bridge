@@ -10,6 +10,7 @@ export const useRecordingStore = defineStore('recording', () => {
   const isRecording = ref(false);
   const tabId = ref<number | null>(null);
   const startedAt = ref<number | null>(null);
+  const hasMic = ref<boolean | null>(null);
   const error = ref<string | null>(null);
   const isLoading = ref(false);
 
@@ -29,6 +30,7 @@ export const useRecordingStore = defineStore('recording', () => {
       isRecording.value = response.isRecording;
       tabId.value = response.tabId ?? null;
       startedAt.value = response.startedAt ?? null;
+      hasMic.value = response.hasMic ?? null;
       error.value = response.error ?? null;
     } catch (err) {
       console.error('Failed to fetch recording status:', err);
@@ -61,6 +63,7 @@ export const useRecordingStore = defineStore('recording', () => {
         isRecording.value = true;
         tabId.value = tab.id;
         startedAt.value = Date.now();
+        hasMic.value = null; // マイク状態は後から更新される
         return true;
       } else {
         error.value = response.error ?? 'Failed to start recording';
@@ -92,6 +95,7 @@ export const useRecordingStore = defineStore('recording', () => {
         isRecording.value = false;
         tabId.value = null;
         startedAt.value = null;
+        hasMic.value = null;
         return true;
       } else {
         error.value = response.error ?? 'Failed to stop recording';
@@ -115,6 +119,7 @@ export const useRecordingStore = defineStore('recording', () => {
     isRecording,
     tabId,
     startedAt,
+    hasMic,
     error,
     isLoading,
 

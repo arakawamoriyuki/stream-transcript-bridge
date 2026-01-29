@@ -11,6 +11,7 @@ import type {
   RecordingState,
   OffscreenToBackgroundMessage,
   AudioChunkMessage,
+  CaptureStatusMessage,
 } from '@/shared/types/messages';
 import { WhisperClient } from '@/infrastructure/openai/WhisperClient';
 import { TranscriptBufferManager } from '@/application/usecases/TranscriptBufferManager';
@@ -205,6 +206,7 @@ function getRecordingStatus(): RecordingStatusResponse {
     isRecording: recordingState.isRecording,
     tabId: recordingState.tabId,
     startedAt: recordingState.startedAt,
+    hasMic: recordingState.hasMic,
   };
 }
 
@@ -300,7 +302,15 @@ chrome.runtime.onMessage.addListener(
     }
 
     if (message.type === 'CAPTURE_STATUS') {
-      console.log('Background: Capture status', (message as { isCapturing: boolean }).isCapturing);
+      const statusMsg = message as CaptureStatusMessage;
+      console.log('Background: Capture status', {
+        isCapturing: statusMsg.isCapturing,
+        hasMic: statusMsg.hasMic,
+      });
+      // マイク状態を録音状態に保存
+      if (statusMsg.hasMic !== undefined) {
+        recordingState.hasMic = statusMsg.hasMic;
+      }
       return;
     }
 

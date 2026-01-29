@@ -118,6 +118,12 @@
               {{ appStore.slackWebhookUrl ? 'OK' : 'NG' }}
             </span>
           </div>
+          <div v-if="recordingStore.isRecording" class="flex justify-between">
+            <span class="opacity-80">Microphone</span>
+            <span :class="recordingStore.hasMic ? 'text-green-400' : 'text-yellow-400'">
+              {{ recordingStore.hasMic === null ? '-' : recordingStore.hasMic ? 'OK' : 'NG' }}
+            </span>
+          </div>
         </div>
 
         <div class="text-xs opacity-60 text-center">
@@ -160,7 +166,11 @@ async function toggleRecording() {
   if (recordingStore.isRecording) {
     await recordingStore.stopRecording();
   } else {
-    await recordingStore.startRecording();
+    const success = await recordingStore.startRecording();
+    if (success) {
+      // マイク状態を取得するため少し待ってからステータスを更新
+      setTimeout(() => recordingStore.fetchStatus(), 500);
+    }
   }
 }
 

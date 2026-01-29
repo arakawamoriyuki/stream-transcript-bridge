@@ -83,14 +83,15 @@ async function startCapture(streamId: string): Promise<void> {
     // 録音開始
     audioMixer.start();
 
-    // 状態を通知
+    // 状態を通知（マイク状態も含める）
     const statusMessage: CaptureStatusMessage = {
       type: 'CAPTURE_STATUS',
       isCapturing: true,
+      hasMic: micStream !== null,
     };
     chrome.runtime.sendMessage(statusMessage);
 
-    console.log('Offscreen: Capture started');
+    console.log('Offscreen: Capture started', { hasMic: micStream !== null });
   } catch (error) {
     console.error('Offscreen: Failed to start capture', error);
 

@@ -67,6 +67,7 @@ export interface CaptureErrorMessage {
 export interface CaptureStatusMessage {
   type: 'CAPTURE_STATUS';
   isCapturing: boolean;
+  hasMic?: boolean;
 }
 
 /** Offscreen から Background へのメッセージ */
@@ -82,6 +83,7 @@ export interface RecordingStatusResponse {
   isRecording: boolean;
   tabId?: number;
   startedAt?: number;
+  hasMic?: boolean;
   error?: string;
 }
 
@@ -97,4 +99,5 @@ export interface RecordingState {
   isRecording: boolean;
   tabId?: number;
   startedAt?: number;
+  hasMic?: boolean;
 }
