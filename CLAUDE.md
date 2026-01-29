@@ -120,6 +120,29 @@ yarn lint            # ESLint 実行
 yarn type-check      # TypeScript 型チェック
 ```
 
+## デバッグ・ログ確認
+
+### Background Service Worker のログ
+1. `chrome://extensions/` を開く
+2. 拡張機能の「Service Worker」横の **「Inspect」** をクリック
+3. DevTools の **Console** タブでログを確認
+
+### Offscreen Document のログ
+
+Offscreen Document は録音開始時に動的に作成される。
+
+1. 拡張機能で**録音を開始**（これにより Offscreen Document が作成される）
+2. `chrome://inspect/#other` を開く
+3. 「Remote Target」セクションで `offscreen.html` を探す
+4. **「inspect」** をクリックして DevTools を開く
+5. Console タブでログを確認
+
+**注意**: 録音停止すると Offscreen Document は閉じられ、inspect できなくなる
+
+### Popup のログ
+1. 拡張機能アイコンを右クリック → **「ポップアップを検証」**
+2. DevTools の **Console** タブでログを確認
+
 ## API キーの管理
 
 環境変数ではなく、**拡張機能の初回起動時にポップアップで入力**させる方式:
