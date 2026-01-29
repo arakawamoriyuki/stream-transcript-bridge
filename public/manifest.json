@@ -9,6 +9,10 @@
     "activeTab",
     "offscreen"
   ],
+  "host_permissions": [
+    "https://api.openai.com/*",
+    "https://hooks.slack.com/*"
+  ],
   "background": {
     "service_worker": "background.js",
     "type": "module"
