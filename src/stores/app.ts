@@ -2,12 +2,12 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 
 // デフォルトの翻訳プロンプト
-export const DEFAULT_TRANSLATION_PROMPT = `あなたは翻訳者です。与えられたテキストを以下の形式で出力してください：
+export const DEFAULT_TRANSLATION_PROMPT = `与えられたテキストを英語と日本語に翻訳し、以下の形式で出力してください。ラベルも必ず含めてください：
 
-🇺🇸 En: [英語訳]
-🇯🇵 Ja: [日本語訳]
+🇺🇸 En: (英語のテキスト)
+🇯🇵 Ja: (日本語のテキスト)
 
-説明は不要です。翻訳結果のみを出力してください。`;
+余計な説明は不要です。上記フォーマットのみ出力してください。`;
 
 export const useAppStore = defineStore('app', () => {
   // State

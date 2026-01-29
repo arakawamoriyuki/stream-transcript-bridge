@@ -44,38 +44,30 @@ export class SlackClient {
    * 文字起こし結果を投稿
    */
   async postTranscript(original: string, translated?: string): Promise<void> {
+    // 翻訳結果があればそれを表示、なければ原文を表示
+    const mainText = translated || original;
+
     const blocks: SlackBlock[] = [
       {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: `*🎤 Original:*\n${original}`,
+          text: mainText,
         },
+      },
+      {
+        type: 'context',
+        elements: [
+          {
+            type: 'mrkdwn',
+            text: `_${new Date().toLocaleString('ja-JP')}_`,
+          },
+        ],
       },
     ];
 
-    if (translated) {
-      blocks.push({
-        type: 'section',
-        text: {
-          type: 'mrkdwn',
-          text: translated,
-        },
-      });
-    }
-
-    blocks.push({
-      type: 'context',
-      elements: [
-        {
-          type: 'mrkdwn',
-          text: `_${new Date().toLocaleString('ja-JP')}_`,
-        },
-      ],
-    });
-
     await this.post({
-      text: original,
+      text: mainText,
       blocks,
     });
   }
