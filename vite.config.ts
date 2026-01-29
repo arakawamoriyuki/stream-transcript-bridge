@@ -1,9 +1,11 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
-import { copyFileSync, mkdirSync, renameSync, existsSync, rmSync } from 'fs';
+import { copyFileSync, mkdirSync, renameSync, existsSync, rmSync, readFileSync, writeFileSync } from 'fs';
 import vue from '@vitejs/plugin-vue';
 
 export default defineConfig({
+  // Chrome Extension では相対パスが必要
+  base: '',
   build: {
     outDir: 'dist',
     emptyOutDir: true,
@@ -43,7 +45,7 @@ export default defineConfig({
         mkdirSync('dist', { recursive: true });
         copyFileSync('public/manifest.json', 'dist/manifest.json');
 
-        // HTML ファイルを dist 直下に移動
+        // HTML ファイルを dist 直下に移動し、パスを修正
         const htmlFiles = [
           { source: 'dist/src/presentation/popup/popup.html', dest: 'dist/popup.html' },
           { source: 'dist/src/presentation/offscreen/offscreen.html', dest: 'dist/offscreen.html' },
@@ -51,7 +53,12 @@ export default defineConfig({
 
         for (const { source, dest } of htmlFiles) {
           if (existsSync(source)) {
-            renameSync(source, dest);
+            // HTML を読み込んでパスを修正
+            let content = readFileSync(source, 'utf-8');
+            // ../../../ や ../../ などの相対パスを ./ に置換
+            content = content.replace(/(?:\.\.\/)+/g, './');
+            writeFileSync(dest, content);
+            rmSync(source);
           }
         }
 
