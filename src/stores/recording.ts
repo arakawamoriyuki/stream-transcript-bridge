@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { ref, computed } from 'vue';
+import { ref } from 'vue';
 import type {
   RecordingStatusResponse,
   GenericResponse,
@@ -13,12 +13,28 @@ export const useRecordingStore = defineStore('recording', () => {
   const hasMic = ref<boolean | null>(null);
   const error = ref<string | null>(null);
   const isLoading = ref(false);
+  const recordingDuration = ref(0);
+  let durationTimer: ReturnType<typeof setInterval> | null = null;
 
-  // Computed
-  const recordingDuration = computed(() => {
-    if (!startedAt.value) return 0;
-    return Math.floor((Date.now() - startedAt.value) / 1000);
-  });
+  // タイマーを開始
+  function startDurationTimer(): void {
+    stopDurationTimer();
+    recordingDuration.value = 0;
+    durationTimer = setInterval(() => {
+      if (startedAt.value) {
+        recordingDuration.value = Math.floor((Date.now() - startedAt.value) / 1000);
+      }
+    }, 1000);
+  }
+
+  // タイマーを停止
+  function stopDurationTimer(): void {
+    if (durationTimer) {
+      clearInterval(durationTimer);
+      durationTimer = null;
+    }
+    recordingDuration.value = 0;
+  }
 
   // Actions
   async function fetchStatus(): Promise<void> {
@@ -32,6 +48,13 @@ export const useRecordingStore = defineStore('recording', () => {
       startedAt.value = response.startedAt ?? null;
       hasMic.value = response.hasMic ?? null;
       error.value = response.error ?? null;
+
+      // 録音中ならタイマーを開始
+      if (response.isRecording && response.startedAt) {
+        startDurationTimer();
+      } else {
+        stopDurationTimer();
+      }
     } catch (err) {
       console.error('Failed to fetch recording status:', err);
       error.value = err instanceof Error ? err.message : 'Unknown error';
@@ -64,6 +87,7 @@ export const useRecordingStore = defineStore('recording', () => {
         tabId.value = tab.id;
         startedAt.value = Date.now();
         hasMic.value = null; // マイク状態は後から更新される
+        startDurationTimer();
         return true;
       } else {
         error.value = response.error ?? 'Failed to start recording';
@@ -96,6 +120,7 @@ export const useRecordingStore = defineStore('recording', () => {
         tabId.value = null;
         startedAt.value = null;
         hasMic.value = null;
+        stopDurationTimer();
         return true;
       } else {
         error.value = response.error ?? 'Failed to stop recording';

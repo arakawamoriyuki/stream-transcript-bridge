@@ -158,7 +158,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { version as vueVersion } from 'vue';
 import { useAppStore } from '@/stores/app';
 import { useRecordingStore } from '@/stores/recording';
@@ -167,7 +167,6 @@ import SettingsForm from './components/SettingsForm.vue';
 const appStore = useAppStore();
 const recordingStore = useRecordingStore();
 const currentTab = ref<'home' | 'settings'>('home');
-let durationInterval: ReturnType<typeof setInterval> | null = null;
 
 const isConfigured = computed(() => {
   return !!(appStore.openaiApiKey && appStore.slackWebhookUrl);
@@ -205,21 +204,6 @@ onMounted(async () => {
   // 設定が未完了の場合は設定タブを表示
   if (!isConfigured.value) {
     currentTab.value = 'settings';
-  }
-
-  // 録音時間を更新するインターバル
-  durationInterval = setInterval(() => {
-    // recordingDuration は computed なので自動更新される
-    // ここでは強制的に再計算させるためにダミー呼び出し
-    if (recordingStore.isRecording) {
-      recordingStore.recordingDuration;
-    }
-  }, 1000);
-});
-
-onUnmounted(() => {
-  if (durationInterval) {
-    clearInterval(durationInterval);
   }
 });
 </script>
