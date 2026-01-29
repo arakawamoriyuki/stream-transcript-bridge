@@ -13,9 +13,23 @@ import type {
   AudioChunkMessage,
 } from '@/shared/types/messages';
 import { WhisperClient } from '@/infrastructure/openai/WhisperClient';
+import { TranscriptBufferManager } from '@/application/usecases/TranscriptBufferManager';
 
 // Whisper クライアント（API キー設定後に初期化）
 let whisperClient: WhisperClient | null = null;
+
+// バッファマネージャ
+const bufferManager = new TranscriptBufferManager();
+
+// 文章完成時のコールバックを設定
+bufferManager.setOnSentenceComplete((sentence) => {
+  console.log('Background: Sentence completed', {
+    text: sentence.text,
+    timestamp: sentence.timestamp,
+  });
+
+  // TODO: GPT API で翻訳・要約し、Slack に投稿（Phase 8 で実装）
+});
 
 // 録音状態
 let recordingState: RecordingState = {
@@ -113,6 +127,9 @@ async function startRecording(tabId: number): Promise<GenericResponse> {
 
     console.log('Background: Got stream ID', streamId);
 
+    // バッファをクリア
+    bufferManager.clear();
+
     // Offscreen Document を作成
     await createOffscreenDocument();
 
@@ -156,6 +173,9 @@ async function stopRecording(): Promise<GenericResponse> {
       type: 'STOP_CAPTURE',
       target: 'offscreen',
     });
+
+    // バッファをフラッシュ（未完成の文章も出力）
+    bufferManager.flush();
 
     // 状態をリセット
     recordingState = {
@@ -249,7 +269,10 @@ async function handleAudioChunk(message: AudioChunkMessage): Promise<void> {
       text: response.text,
     });
 
-    // TODO: バッファリング処理に渡す（Phase 7 で実装）
+    // バッファマネージャに渡して文章完成判定
+    if (response.text) {
+      bufferManager.processTranscript(response.text, message.timestamp);
+    }
   } catch (error) {
     console.error('Background: Transcription failed', error);
   }
