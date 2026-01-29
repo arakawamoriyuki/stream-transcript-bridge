@@ -38,6 +38,9 @@ bufferManager.setOnSentenceComplete((sentence) => {
   pendingSentences.push(sentence.text);
 });
 
+// 翻訳プロンプト
+let translationPrompt: string | null = null;
+
 /**
  * 文章を翻訳して Slack に投稿
  */
@@ -53,10 +56,12 @@ async function processAndPostToSlack(text: string): Promise<void> {
 
     let translatedText: string | undefined;
 
-    // GPT で翻訳（英語の場合のみ）
-    if (gptClient && /^[a-zA-Z\s.,!?'"()-]+$/.test(text)) {
+    // GPT で翻訳
+    if (gptClient) {
       try {
-        const result = await gptClient.translate(text);
+        const result = await gptClient.translate(text, {
+          customPrompt: translationPrompt || undefined,
+        });
         translatedText = result.translatedText;
         console.log('[Background] 翻訳完了', { original: text, translated: translatedText });
       } catch (error) {
@@ -77,7 +82,10 @@ async function processAndPostToSlack(text: string): Promise<void> {
  */
 async function initClients(): Promise<void> {
   try {
-    const result = await chrome.storage.local.get(['openaiApiKey', 'slackWebhookUrl']);
+    const result = await chrome.storage.local.get(['openaiApiKey', 'slackWebhookUrl', 'translationPrompt']);
+
+    // 翻訳プロンプトを設定
+    translationPrompt = result.translationPrompt || null;
 
     if (result.openaiApiKey) {
       if (!whisperClient) {

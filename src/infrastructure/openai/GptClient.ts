@@ -11,6 +11,7 @@ const GPT_MODEL = 'gpt-4o-mini';
 
 export interface TranslateOptions {
   targetLanguage?: string;
+  customPrompt?: string;
 }
 
 export interface SummarizeOptions {
@@ -37,10 +38,15 @@ export class GptClient {
   async translate(text: string, options: TranslateOptions = {}): Promise<GptResponse> {
     const targetLanguage = options.targetLanguage || '日本語';
 
+    // カスタムプロンプトがあればそれを使用
+    const systemPrompt = options.customPrompt
+      ? options.customPrompt
+      : `あなたは翻訳者です。与えられたテキストを${targetLanguage}に翻訳してください。翻訳結果のみを出力し、説明は不要です。`;
+
     const response = await this.callGpt([
       {
         role: 'system',
-        content: `あなたは翻訳者です。与えられたテキストを${targetLanguage}に翻訳してください。翻訳結果のみを出力し、説明は不要です。`,
+        content: systemPrompt,
       },
       {
         role: 'user',

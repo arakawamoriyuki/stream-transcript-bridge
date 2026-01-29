@@ -35,6 +35,22 @@
         </p>
       </div>
 
+      <div>
+        <label for="translationPrompt" class="block text-sm font-medium mb-1">
+          翻訳プロンプト
+        </label>
+        <textarea
+          id="translationPrompt"
+          v-model="formData.translationPrompt"
+          rows="5"
+          placeholder="翻訳の指示を入力..."
+          class="w-full px-3 py-2 bg-white/10 border border-white/20 rounded text-white placeholder-white/50 focus:outline-none focus:border-white/40 text-sm"
+        ></textarea>
+        <p class="text-white/50 text-xs mt-1">
+          GPTへの翻訳指示。{text}に原文が入ります。
+        </p>
+      </div>
+
       <div v-if="successMessage" class="text-green-300 text-sm">
         {{ successMessage }}
       </div>
@@ -70,13 +86,14 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue';
-import { useAppStore } from '@/stores/app';
+import { useAppStore, DEFAULT_TRANSLATION_PROMPT } from '@/stores/app';
 
 const appStore = useAppStore();
 
 const formData = reactive({
   openaiApiKey: '',
   slackWebhookUrl: '',
+  translationPrompt: DEFAULT_TRANSLATION_PROMPT,
 });
 
 const errors = reactive({
@@ -96,6 +113,9 @@ onMounted(() => {
   }
   if (appStore.slackWebhookUrl) {
     formData.slackWebhookUrl = appStore.slackWebhookUrl;
+  }
+  if (appStore.translationPrompt) {
+    formData.translationPrompt = appStore.translationPrompt;
   }
 });
 
@@ -140,6 +160,7 @@ async function handleSubmit() {
     await appStore.saveSettings({
       openaiApiKey: formData.openaiApiKey.trim(),
       slackWebhookUrl: formData.slackWebhookUrl.trim(),
+      translationPrompt: formData.translationPrompt.trim() || DEFAULT_TRANSLATION_PROMPT,
     });
 
     successMessage.value = '設定を保存しました';
@@ -169,6 +190,7 @@ async function handleReset() {
     await appStore.resetAllSettings();
     formData.openaiApiKey = '';
     formData.slackWebhookUrl = '';
+    formData.translationPrompt = DEFAULT_TRANSLATION_PROMPT;
     successMessage.value = '設定をリセットしました';
 
     setTimeout(() => {
