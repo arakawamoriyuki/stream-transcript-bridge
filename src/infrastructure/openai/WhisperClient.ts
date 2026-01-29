@@ -41,7 +41,7 @@ export class WhisperClient implements IWhisperRepository {
       type: 'audio/webm',
     });
 
-    console.log('WhisperClient: Sending file', {
+    console.log('[Whisper] ファイル送信', {
       name: file.name,
       type: file.type,
       size: file.size,

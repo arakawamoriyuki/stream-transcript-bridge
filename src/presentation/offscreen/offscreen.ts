@@ -20,7 +20,7 @@ let audioMixer: AudioMixer | null = null;
  */
 async function startCapture(streamId: string): Promise<void> {
   try {
-    console.log('Offscreen: Starting capture with streamId', streamId);
+    console.log('[Offscreen] キャプチャ開始 streamId:', streamId);
 
     // Tab Audio を取得（streamId を使用）
     const tabStream = await navigator.mediaDevices.getUserMedia({
@@ -34,7 +34,7 @@ async function startCapture(streamId: string): Promise<void> {
       video: false,
     });
 
-    console.log('Offscreen: Got tab stream', {
+    console.log('[Offscreen] タブ音声取得', {
       tracks: tabStream.getTracks().length,
       trackSettings: tabStream.getAudioTracks()[0]?.getSettings(),
     });
@@ -46,9 +46,9 @@ async function startCapture(streamId: string): Promise<void> {
         audio: true,
         video: false,
       });
-      console.log('Offscreen: Got mic stream');
+      console.log('[Offscreen] マイク音声取得');
     } catch (micError) {
-      console.warn('Offscreen: Could not get mic stream, continuing with tab audio only', micError);
+      console.warn('[Offscreen] マイク取得失敗 - タブ音声のみで続行', micError);
     }
 
     // AudioMixer を作成
@@ -66,7 +66,7 @@ async function startCapture(streamId: string): Promise<void> {
 
     // チャンク生成コールバックを設定
     audioMixer.setOnChunkCallback(async (chunk) => {
-      console.log('Offscreen: Generated chunk', chunk.id, chunk.data.size, 'bytes');
+      console.log('[Offscreen] チャンク生成', chunk.id, chunk.data.size, 'bytes');
 
       // Blob を ArrayBuffer に変換し、Base64 エンコード
       // 大きな配列はスプレッド演算子でスタックオーバーフローするため、チャンク処理
@@ -80,7 +80,7 @@ async function startCapture(streamId: string): Promise<void> {
       }
       const base64 = btoa(binary);
 
-      console.log('Offscreen: Encoded chunk to base64', base64.length, 'chars');
+      console.log('[Offscreen] Base64エンコード完了', base64.length, '文字');
 
       // Background に送信（Base64 文字列として）
       const message = {
@@ -105,9 +105,9 @@ async function startCapture(streamId: string): Promise<void> {
     };
     chrome.runtime.sendMessage(statusMessage);
 
-    console.log('Offscreen: Capture started', { hasMic: micStream !== null });
+    console.log('[Offscreen] キャプチャ開始完了', { hasMic: micStream !== null });
   } catch (error) {
-    console.error('Offscreen: Failed to start capture', error);
+    console.error('[Offscreen] キャプチャ開始失敗', error);
 
     const errorMessage: CaptureErrorMessage = {
       type: 'CAPTURE_ERROR',
@@ -121,7 +121,7 @@ async function startCapture(streamId: string): Promise<void> {
  * 音声キャプチャを停止
  */
 function stopCapture(): void {
-  console.log('Offscreen: Stopping capture');
+  console.log('[Offscreen] キャプチャ停止中');
 
   if (audioMixer) {
     audioMixer.dispose();
@@ -135,7 +135,7 @@ function stopCapture(): void {
   };
   chrome.runtime.sendMessage(statusMessage);
 
-  console.log('Offscreen: Capture stopped');
+  console.log('[Offscreen] キャプチャ停止完了');
 }
 
 // メッセージリスナー
@@ -146,7 +146,7 @@ chrome.runtime.onMessage.addListener(
       return;
     }
 
-    console.log('Offscreen: Received message', message.type);
+    console.log('[Offscreen] メッセージ受信', message.type);
 
     switch (message.type) {
       case 'START_CAPTURE':
@@ -159,4 +159,4 @@ chrome.runtime.onMessage.addListener(
   }
 );
 
-console.log('Offscreen: Document initialized');
+console.log('[Offscreen] ドキュメント初期化完了');

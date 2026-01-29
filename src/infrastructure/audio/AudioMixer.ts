@@ -92,24 +92,24 @@ export class AudioMixer {
    */
   async start(): Promise<void> {
     if (this.isRecording) {
-      console.warn('AudioMixer: Already recording');
+      console.warn('[AudioMixer] 既に録音中');
       return;
     }
 
     if (!this.destination || !this.audioContext) {
-      throw new Error('AudioMixer: No audio source set. Call setTabStream or setMicStream first.');
+      throw new Error('[AudioMixer] 音声ソース未設定');
     }
 
     // AudioContext が suspended の場合は resume する
     if (this.audioContext.state === 'suspended') {
-      console.log('AudioMixer: Resuming AudioContext...');
+      console.log('[AudioMixer] AudioContext を resume 中...');
       await this.audioContext.resume();
     }
-    console.log('AudioMixer: AudioContext state:', this.audioContext.state);
+    console.log('[AudioMixer] AudioContext 状態:', this.audioContext.state);
 
     // MediaRecorder を作成
     const mixedStream = this.destination.stream;
-    console.log('AudioMixer: Mixed stream tracks:', mixedStream.getTracks().length);
+    console.log('[AudioMixer] ミックスストリーム トラック数:', mixedStream.getTracks().length);
 
     // サポートされている MIME タイプを確認
     const mimeType = MediaRecorder.isTypeSupported(this.mimeType)
@@ -125,7 +125,7 @@ export class AudioMixer {
     this.chunkStartTime = Date.now();
 
     this.mediaRecorder.ondataavailable = (event) => {
-      console.log('AudioMixer: ondataavailable', { size: event.data.size });
+      console.log('[AudioMixer] データ取得', { size: event.data.size });
       if (event.data.size > 0 && this.onChunk) {
         const chunk: AudioChunkData = {
           id: `chunk-${Date.now()}-${this.chunkCounter++}`,
@@ -139,23 +139,23 @@ export class AudioMixer {
     };
 
     this.mediaRecorder.onerror = (event) => {
-      console.error('AudioMixer: MediaRecorder error', event);
+      console.error('[AudioMixer] MediaRecorder エラー', event);
     };
 
     this.mediaRecorder.onstart = () => {
-      console.log('AudioMixer: MediaRecorder started');
+      console.log('[AudioMixer] MediaRecorder 開始');
     };
 
     this.mediaRecorder.onstop = () => {
-      console.log('AudioMixer: MediaRecorder stopped');
+      console.log('[AudioMixer] MediaRecorder 停止');
     };
 
     // チャンク間隔で録音データを取得
-    console.log('AudioMixer: Starting MediaRecorder with chunk duration:', this.chunkDuration);
+    console.log('[AudioMixer] MediaRecorder 開始 チャンク間隔:', this.chunkDuration);
     this.mediaRecorder.start(this.chunkDuration);
     this.isRecording = true;
 
-    console.log('AudioMixer: Recording started, recorder state:', this.mediaRecorder.state);
+    console.log('[AudioMixer] 録音開始 状態:', this.mediaRecorder.state);
   }
 
   /**
@@ -163,14 +163,14 @@ export class AudioMixer {
    */
   stop(): void {
     if (!this.isRecording || !this.mediaRecorder) {
-      console.warn('AudioMixer: Not recording');
+      console.warn('[AudioMixer] 録音していません');
       return;
     }
 
     this.mediaRecorder.stop();
     this.isRecording = false;
 
-    console.log('AudioMixer: Recording stopped');
+    console.log('[AudioMixer] 録音停止');
   }
 
   /**
@@ -209,7 +209,7 @@ export class AudioMixer {
     this.mediaRecorder = null;
     this.onChunk = null;
 
-    console.log('AudioMixer: Disposed');
+    console.log('[AudioMixer] リソース解放完了');
   }
 
   /**

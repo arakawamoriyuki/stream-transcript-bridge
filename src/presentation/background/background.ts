@@ -28,7 +28,7 @@ const bufferManager = new TranscriptBufferManager();
 
 // 文章完成時のコールバックを設定
 bufferManager.setOnSentenceComplete(async (sentence) => {
-  console.log('Background: Sentence completed', {
+  console.log('[Background] 文章完成', {
     text: sentence.text,
     timestamp: sentence.timestamp,
   });
@@ -46,7 +46,7 @@ async function processAndPostToSlack(text: string): Promise<void> {
     await initClients();
 
     if (!slackClient) {
-      console.warn('Background: Slack client not available');
+      console.warn('[Background] Slack クライアント未設定');
       return;
     }
 
@@ -57,17 +57,17 @@ async function processAndPostToSlack(text: string): Promise<void> {
       try {
         const result = await gptClient.translate(text);
         translatedText = result.translatedText;
-        console.log('Background: Translated', { original: text, translated: translatedText });
+        console.log('[Background] 翻訳完了', { original: text, translated: translatedText });
       } catch (error) {
-        console.error('Background: Translation failed', error);
+        console.error('[Background] 翻訳失敗', error);
       }
     }
 
     // Slack に投稿
     await slackClient.postTranscript(text, translatedText);
-    console.log('Background: Posted to Slack');
+    console.log('[Background] Slack 投稿完了');
   } catch (error) {
-    console.error('Background: Failed to post to Slack', error);
+    console.error('[Background] Slack 投稿失敗', error);
   }
 }
 
@@ -100,7 +100,7 @@ async function initClients(): Promise<void> {
       }
     }
   } catch (error) {
-    console.error('Background: Failed to init clients', error);
+    console.error('[Background] クライアント初期化失敗', error);
   }
 }
 
@@ -144,12 +144,12 @@ async function createOffscreenDocument(): Promise<void> {
       justification: 'Recording tab audio and microphone for transcription',
     });
     offscreenDocumentCreated = true;
-    console.log('Background: Offscreen document created');
+    console.log('[Background] Offscreen ドキュメント作成完了');
   } catch (error) {
     // 既に存在する場合はエラーになるので、その場合は成功とみなす
     if ((error as Error).message?.includes('single offscreen document')) {
       offscreenDocumentCreated = true;
-      console.log('Background: Offscreen document already exists');
+      console.log('[Background] Offscreen ドキュメントは既に存在');
     } else {
       throw error;
     }
@@ -166,7 +166,7 @@ async function closeOffscreenDocument(): Promise<void> {
 
   await chrome.offscreen.closeDocument();
   offscreenDocumentCreated = false;
-  console.log('Background: Offscreen document closed');
+  console.log('[Background] Offscreen ドキュメント終了');
 }
 
 /**
@@ -198,7 +198,7 @@ async function startRecording(tabId: number): Promise<GenericResponse> {
       targetTabId: tabId,
     });
 
-    console.log('Background: Got stream ID', streamId);
+    console.log('[Background] ストリームID取得', streamId);
 
     // バッファをクリア
     bufferManager.clear();
@@ -220,11 +220,11 @@ async function startRecording(tabId: number): Promise<GenericResponse> {
       startedAt: Date.now(),
     };
 
-    console.log('Background: Recording started for tab', tabId);
+    console.log('[Background] 録音開始 タブID:', tabId);
 
     return { success: true };
   } catch (error) {
-    console.error('Background: Failed to start recording', error);
+    console.error('[Background] 録音開始失敗', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -258,11 +258,11 @@ async function stopRecording(): Promise<GenericResponse> {
     // Offscreen Document を閉じる
     await closeOffscreenDocument();
 
-    console.log('Background: Recording stopped');
+    console.log('[Background] 録音停止');
 
     return { success: true };
   } catch (error) {
-    console.error('Background: Failed to stop recording', error);
+    console.error('[Background] 録音停止失敗', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -298,7 +298,7 @@ async function handleAudioChunk(message: {
     bytes[i] = binaryString.charCodeAt(i);
   }
 
-  console.log('Background: Received audio chunk', {
+  console.log('[Background] 音声チャンク受信', {
     id: message.chunkId,
     timestamp: message.timestamp,
     duration: message.duration,
@@ -308,7 +308,7 @@ async function handleAudioChunk(message: {
   // クライアントを初期化
   await initClients();
   if (!whisperClient) {
-    console.warn('Background: Skipping transcription - Whisper client not available');
+    console.warn('[Background] Whisper クライアント未設定 - 文字起こしスキップ');
     return;
   }
 
@@ -324,7 +324,7 @@ async function handleAudioChunk(message: {
       duration: message.duration,
     });
 
-    console.log('Background: Transcription result', {
+    console.log('[Background] 文字起こし結果', {
       chunkId: message.chunkId,
       text: response.text,
     });
@@ -334,7 +334,7 @@ async function handleAudioChunk(message: {
       bufferManager.processTranscript(response.text, message.timestamp);
     }
   } catch (error) {
-    console.error('Background: Transcription failed', error);
+    console.error('[Background] 文字起こし失敗', error);
   }
 }
 
@@ -345,7 +345,7 @@ chrome.runtime.onMessage.addListener(
     _sender,
     sendResponse
   ) => {
-    console.log('Background: Received message', message.type);
+    console.log('[Background] メッセージ受信', message.type);
 
     // Offscreen からのメッセージ
     if (message.type === 'AUDIO_CHUNK') {
@@ -354,14 +354,14 @@ chrome.runtime.onMessage.addListener(
     }
 
     if (message.type === 'CAPTURE_ERROR') {
-      console.error('Background: Capture error', (message as { error: string }).error);
+      console.error('[Background] キャプチャエラー', (message as { error: string }).error);
       recordingState = { isRecording: false };
       return;
     }
 
     if (message.type === 'CAPTURE_STATUS') {
       const statusMsg = message as CaptureStatusMessage;
-      console.log('Background: Capture status', {
+      console.log('[Background] キャプチャ状態', {
         isCapturing: statusMsg.isCapturing,
         hasMic: statusMsg.hasMic,
       });
@@ -400,4 +400,4 @@ chrome.runtime.onMessage.addListener(
   }
 );
 
-console.log('Background: Service Worker initialized');
+console.log('[Background] Service Worker 初期化完了');
