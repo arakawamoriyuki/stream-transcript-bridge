@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import SettingsForm from './SettingsForm.vue';
-import { useAppStore } from '@/stores/app';
+import { useAppStore, DEFAULT_TRANSLATION_PROMPT } from '@/stores/app';
 
 describe('SettingsForm.vue', () => {
   beforeEach(() => {
@@ -95,6 +95,7 @@ describe('SettingsForm.vue', () => {
     expect(store.saveSettings).toHaveBeenCalledWith({
       openaiApiKey: 'sk-test123',
       slackWebhookUrl: 'https://hooks.slack.com/services/test',
+      translationPrompt: DEFAULT_TRANSLATION_PROMPT,
     });
 
     // 成功メッセージの確認

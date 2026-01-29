@@ -76,7 +76,7 @@ describe('useAppStore', () => {
 
       await store.loadSettings();
 
-      expect(chrome.storage.local.get).toHaveBeenCalledWith(['openaiApiKey', 'slackWebhookUrl']);
+      expect(chrome.storage.local.get).toHaveBeenCalledWith(['openaiApiKey', 'slackWebhookUrl', 'translationPrompt']);
       expect(store.openaiApiKey).toBe('test-api-key');
       expect(store.slackWebhookUrl).toBe('https://hooks.slack.com/test');
     });

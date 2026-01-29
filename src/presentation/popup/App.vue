@@ -1,5 +1,5 @@
 <template>
-  <div class="w-[400px] min-h-[500px] bg-gradient-to-br from-purple-600 to-purple-800 text-white flex flex-col">
+  <div class="w-[400px] min-h-[560px] bg-gradient-to-br from-purple-600 to-purple-800 text-white flex flex-col">
     <!-- Header -->
     <div class="p-5 text-center border-b border-white/20">
       <h1 class="text-lg font-semibold">
@@ -136,11 +136,20 @@
               </button>
             </div>
           </div>
-          <div v-if="recordingStore.isRecording" class="flex justify-between items-center">
+          <div class="flex justify-between items-center">
             <span class="opacity-80">Microphone</span>
-            <span :class="recordingStore.hasMic ? 'text-green-400' : 'text-yellow-400'">
-              {{ recordingStore.hasMic === null ? '-' : recordingStore.hasMic ? 'OK' : 'NG' }}
-            </span>
+            <div class="flex items-center gap-2">
+              <span :class="micPermissionGranted ? 'text-green-400' : 'text-yellow-400'">
+                {{ micPermissionGranted ? 'OK' : 'NG' }}
+              </span>
+              <button
+                v-if="!micPermissionGranted"
+                @click="requestMicPermission"
+                class="text-xs bg-white/20 hover:bg-white/30 px-2 py-0.5 rounded"
+              >
+                許可
+              </button>
+            </div>
           </div>
         </div>
 
@@ -193,6 +202,7 @@ import SettingsForm from './components/SettingsForm.vue';
 const appStore = useAppStore();
 const recordingStore = useRecordingStore();
 const currentTab = ref<'home' | 'settings'>('home');
+const micPermissionGranted = ref(false);
 
 const isConfigured = computed(() => {
   return !!(appStore.openaiApiKey && appStore.slackWebhookUrl);
@@ -232,9 +242,32 @@ function clearLogs() {
   }
 }
 
+async function checkMicPermission(): Promise<void> {
+  try {
+    const result = await navigator.permissions.query({ name: 'microphone' as PermissionName });
+    micPermissionGranted.value = result.state === 'granted';
+  } catch {
+    micPermissionGranted.value = false;
+  }
+}
+
+async function requestMicPermission(): Promise<void> {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    stream.getTracks().forEach(track => track.stop());
+    micPermissionGranted.value = true;
+  } catch (error) {
+    console.error('マイク権限取得失敗:', error);
+    micPermissionGranted.value = false;
+  }
+}
+
 onMounted(async () => {
   // Chrome Extension API をチェック
   appStore.checkChromeApi();
+
+  // マイク権限をチェック
+  await checkMicPermission();
 
   // 設定を読み込み
   if (appStore.chromeApiAvailable) {

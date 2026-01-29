@@ -13,6 +13,20 @@ describe('App.vue', () => {
     (chrome.runtime.sendMessage as ReturnType<typeof vi.fn>).mockResolvedValue({
       isRecording: false,
     });
+
+    // Mock chrome.storage.onChanged.addListener
+    if (!chrome.storage.onChanged) {
+      // @ts-expect-error - mock setup
+      chrome.storage.onChanged = { addListener: vi.fn() };
+    }
+
+    // Mock navigator.permissions.query
+    Object.defineProperty(navigator, 'permissions', {
+      value: {
+        query: vi.fn().mockResolvedValue({ state: 'denied' }),
+      },
+      writable: true,
+    });
   });
 
   it('タイトルが表示される', () => {
