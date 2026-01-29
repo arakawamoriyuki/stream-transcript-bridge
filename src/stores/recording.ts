@@ -78,16 +78,6 @@ export const useRecordingStore = defineStore('recording', () => {
     error.value = null;
 
     try {
-      // マイク権限を事前に取得（Offscreen で使えるようにするため）
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        // 取得したストリームは即座に停止（権限だけ欲しい）
-        stream.getTracks().forEach(track => track.stop());
-        console.log('[Recording] マイク権限取得成功');
-      } catch (micError) {
-        console.warn('[Recording] マイク権限取得失敗（タブ音声のみで続行）', micError);
-      }
-
       // 現在アクティブなタブを取得
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 

@@ -68,8 +68,28 @@
       </button>
     </form>
 
-    <!-- Reset Section -->
+    <!-- Microphone Permission -->
     <div class="mt-6 pt-4 border-t border-white/20">
+      <p class="text-sm font-medium mb-2">マイク権限</p>
+      <button
+        @click="requestMicPermission"
+        :disabled="micPermissionGranted"
+        :class="[
+          'w-full py-2 px-4 font-medium rounded transition-colors',
+          micPermissionGranted
+            ? 'bg-green-500/20 text-green-200 cursor-default'
+            : 'bg-blue-500/20 text-blue-200 hover:bg-blue-500/30'
+        ]"
+      >
+        {{ micPermissionGranted ? '✓ マイク許可済み' : 'マイクを許可する' }}
+      </button>
+      <p class="text-xs opacity-60 mt-2">
+        自分の声も録音する場合は許可してください
+      </p>
+    </div>
+
+    <!-- Reset Section -->
+    <div class="mt-4 pt-4 border-t border-white/20">
       <button
         @click="handleReset"
         :disabled="isResetting"
@@ -105,8 +125,9 @@ const isSaving = ref(false);
 const isResetting = ref(false);
 const successMessage = ref('');
 const errorMessage = ref('');
+const micPermissionGranted = ref(false);
 
-onMounted(() => {
+onMounted(async () => {
   // 既存の設定を読み込み
   if (appStore.openaiApiKey) {
     formData.openaiApiKey = appStore.openaiApiKey;
@@ -117,7 +138,28 @@ onMounted(() => {
   if (appStore.translationPrompt) {
     formData.translationPrompt = appStore.translationPrompt;
   }
+
+  // マイク権限をチェック
+  try {
+    const permissionStatus = await navigator.permissions.query({ name: 'microphone' as PermissionName });
+    micPermissionGranted.value = permissionStatus.state === 'granted';
+  } catch {
+    // permissions API がサポートされていない場合は無視
+  }
 });
+
+async function requestMicPermission() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    stream.getTracks().forEach(track => track.stop());
+    micPermissionGranted.value = true;
+    successMessage.value = 'マイク権限を許可しました';
+    setTimeout(() => { successMessage.value = ''; }, 3000);
+  } catch (error) {
+    console.error('Microphone permission denied:', error);
+    errorMessage.value = 'マイク権限が拒否されました';
+  }
+}
 
 function validateForm(): boolean {
   errors.openaiApiKey = '';
