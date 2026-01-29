@@ -49,7 +49,7 @@ export class WhisperClient implements IWhisperRepository {
 
     formData.append('file', file);
     formData.append('model', WHISPER_MODEL);
-    formData.append('language', 'ja'); // 日本語を優先（自動検出も可能）
+    // language を指定しないと自動検出（原文の言語で出力）
     formData.append('response_format', 'json');
 
     // API リクエスト

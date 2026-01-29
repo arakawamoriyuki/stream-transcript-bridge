@@ -49,7 +49,7 @@ export class SlackClient {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: `*Original:*\n${original}`,
+          text: `*🎤 Original:*\n${original}`,
         },
       },
     ];
@@ -59,7 +59,7 @@ export class SlackClient {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: `*Translated:*\n${translated}`,
+          text: translated,
         },
       });
     }
