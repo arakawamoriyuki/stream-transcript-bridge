@@ -69,8 +69,16 @@ async function startCapture(streamId: string): Promise<void> {
       console.log('Offscreen: Generated chunk', chunk.id, chunk.data.size, 'bytes');
 
       // Blob を ArrayBuffer に変換し、Base64 エンコード
+      // 大きな配列はスプレッド演算子でスタックオーバーフローするため、チャンク処理
       const arrayBuffer = await chunk.data.arrayBuffer();
-      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+      const bytes = new Uint8Array(arrayBuffer);
+      let binary = '';
+      const chunkSize = 8192;
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        const slice = bytes.subarray(i, i + chunkSize);
+        binary += String.fromCharCode.apply(null, slice as unknown as number[]);
+      }
+      const base64 = btoa(binary);
 
       console.log('Offscreen: Encoded chunk to base64', base64.length, 'chars');
 
