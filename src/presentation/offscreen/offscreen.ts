@@ -34,7 +34,10 @@ async function startCapture(streamId: string): Promise<void> {
       video: false,
     });
 
-    console.log('Offscreen: Got tab stream');
+    console.log('Offscreen: Got tab stream', {
+      tracks: tabStream.getTracks().length,
+      trackSettings: tabStream.getAudioTracks()[0]?.getSettings(),
+    });
 
     // Mic Audio を取得（オプション）
     let micStream: MediaStream | null = null;
@@ -65,14 +68,17 @@ async function startCapture(streamId: string): Promise<void> {
     audioMixer.setOnChunkCallback(async (chunk) => {
       console.log('Offscreen: Generated chunk', chunk.id, chunk.data.size, 'bytes');
 
-      // Blob を ArrayBuffer に変換
+      // Blob を ArrayBuffer に変換し、Base64 エンコード
       const arrayBuffer = await chunk.data.arrayBuffer();
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
 
-      // Background に送信
-      const message: AudioChunkMessage = {
+      console.log('Offscreen: Encoded chunk to base64', base64.length, 'chars');
+
+      // Background に送信（Base64 文字列として）
+      const message = {
         type: 'AUDIO_CHUNK',
         chunkId: chunk.id,
-        data: arrayBuffer,
+        data: base64,
         timestamp: chunk.timestamp,
         duration: chunk.duration,
       };
@@ -81,7 +87,7 @@ async function startCapture(streamId: string): Promise<void> {
     });
 
     // 録音開始
-    audioMixer.start();
+    await audioMixer.start();
 
     // 状態を通知（マイク状態も含める）
     const statusMessage: CaptureStatusMessage = {

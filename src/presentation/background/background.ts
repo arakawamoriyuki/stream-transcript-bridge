@@ -285,12 +285,24 @@ function getRecordingStatus(): RecordingStatusResponse {
 /**
  * AudioChunk を処理して Whisper API に送信
  */
-async function handleAudioChunk(message: AudioChunkMessage): Promise<void> {
+async function handleAudioChunk(message: {
+  chunkId: string;
+  data: string; // Base64 encoded
+  timestamp: number;
+  duration: number;
+}): Promise<void> {
+  // Base64 から ArrayBuffer にデコード
+  const binaryString = atob(message.data);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+
   console.log('Background: Received audio chunk', {
     id: message.chunkId,
     timestamp: message.timestamp,
     duration: message.duration,
-    size: message.data.byteLength,
+    size: bytes.length,
   });
 
   // クライアントを初期化
@@ -301,8 +313,8 @@ async function handleAudioChunk(message: AudioChunkMessage): Promise<void> {
   }
 
   try {
-    // ArrayBuffer を Blob に変換
-    const blob = new Blob([message.data], { type: 'audio/webm' });
+    // デコードした bytes を Blob に変換
+    const blob = new Blob([bytes], { type: 'audio/webm' });
 
     // Whisper API に送信
     const response = await whisperClient.transcribe({
