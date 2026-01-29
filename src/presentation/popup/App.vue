@@ -144,9 +144,6 @@
           </div>
         </div>
 
-        <div class="text-xs opacity-60 text-center">
-          <p>Vue: {{ vueVersion }}</p>
-        </div>
       </div>
 
       <!-- Settings Tab -->
@@ -159,7 +156,6 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { version as vueVersion } from 'vue';
 import { useAppStore } from '@/stores/app';
 import { useRecordingStore } from '@/stores/recording';
 import SettingsForm from './components/SettingsForm.vue';
