@@ -12,6 +12,10 @@ import type {
   OffscreenToBackgroundMessage,
   AudioChunkMessage,
 } from '@/shared/types/messages';
+import { WhisperClient } from '@/infrastructure/openai/WhisperClient';
+
+// Whisper クライアント（API キー設定後に初期化）
+let whisperClient: WhisperClient | null = null;
 
 // 録音状態
 let recordingState: RecordingState = {
@@ -185,10 +189,35 @@ function getRecordingStatus(): RecordingStatusResponse {
 }
 
 /**
- * AudioChunk を処理
- * TODO: 将来的には Whisper API に送信する
+ * Whisper クライアントを初期化（API キーを取得して設定）
  */
-function handleAudioChunk(message: AudioChunkMessage): void {
+async function initWhisperClient(): Promise<WhisperClient | null> {
+  try {
+    const result = await chrome.storage.local.get(['openaiApiKey']);
+    const apiKey = result.openaiApiKey;
+
+    if (!apiKey) {
+      console.warn('Background: OpenAI API key not configured');
+      return null;
+    }
+
+    if (!whisperClient) {
+      whisperClient = new WhisperClient(apiKey);
+    } else {
+      whisperClient.setApiKey(apiKey);
+    }
+
+    return whisperClient;
+  } catch (error) {
+    console.error('Background: Failed to init Whisper client', error);
+    return null;
+  }
+}
+
+/**
+ * AudioChunk を処理して Whisper API に送信
+ */
+async function handleAudioChunk(message: AudioChunkMessage): Promise<void> {
   console.log('Background: Received audio chunk', {
     id: message.chunkId,
     timestamp: message.timestamp,
@@ -196,7 +225,34 @@ function handleAudioChunk(message: AudioChunkMessage): void {
     size: message.data.byteLength,
   });
 
-  // TODO: Whisper API への送信処理を実装
+  // Whisper クライアントを初期化
+  const client = await initWhisperClient();
+  if (!client) {
+    console.warn('Background: Skipping transcription - Whisper client not available');
+    return;
+  }
+
+  try {
+    // ArrayBuffer を Blob に変換
+    const blob = new Blob([message.data], { type: 'audio/webm' });
+
+    // Whisper API に送信
+    const response = await client.transcribe({
+      id: message.chunkId,
+      data: blob,
+      timestamp: message.timestamp,
+      duration: message.duration,
+    });
+
+    console.log('Background: Transcription result', {
+      chunkId: message.chunkId,
+      text: response.text,
+    });
+
+    // TODO: バッファリング処理に渡す（Phase 7 で実装）
+  } catch (error) {
+    console.error('Background: Transcription failed', error);
+  }
 }
 
 // メッセージリスナー
