@@ -36,8 +36,15 @@ export class WhisperClient implements IWhisperRepository {
     const formData = new FormData();
 
     // Blob を File に変換（Whisper API は拡張子が必要）
+    // 明示的に audio/webm を指定
     const file = new File([audioChunk.data], 'audio.webm', {
-      type: audioChunk.data.type || 'audio/webm',
+      type: 'audio/webm',
+    });
+
+    console.log('WhisperClient: Sending file', {
+      name: file.name,
+      type: file.type,
+      size: file.size,
     });
 
     formData.append('file', file);
