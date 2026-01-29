@@ -36,10 +36,34 @@ bufferManager.setOnSentenceComplete((sentence) => {
     timestamp: sentence.timestamp,
   });
   pendingSentences.push(sentence.text);
+  // バッファログを保存
+  saveLog(sentence.text, 'buffer');
 });
 
 // 翻訳プロンプト
 let translationPrompt: string | null = null;
+
+/**
+ * ログを保存
+ */
+async function saveLog(text: string, type: 'posted' | 'buffer'): Promise<void> {
+  try {
+    const result = await chrome.storage.local.get(['transcriptLogs']);
+    const logs = result.transcriptLogs || [];
+    logs.unshift({
+      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      text,
+      type,
+      timestamp: Date.now(),
+    });
+    // 最大50件
+    await chrome.storage.local.set({
+      transcriptLogs: logs.slice(0, 50),
+    });
+  } catch (error) {
+    console.error('[Background] ログ保存失敗', error);
+  }
+}
 
 /**
  * 文章を翻訳して Slack に投稿
@@ -72,6 +96,9 @@ async function processAndPostToSlack(text: string): Promise<void> {
     // Slack に投稿
     await slackClient.postTranscript(text, translatedText);
     console.log('[Background] Slack 投稿完了');
+
+    // ログを保存
+    await saveLog(translatedText || text, 'posted');
   } catch (error) {
     console.error('[Background] Slack 投稿失敗', error);
   }

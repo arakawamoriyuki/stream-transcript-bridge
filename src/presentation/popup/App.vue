@@ -144,6 +144,36 @@
           </div>
         </div>
 
+        <!-- Transcript Logs -->
+        <div class="bg-white/10 rounded p-4">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-sm font-medium">ログ</span>
+            <button
+              v-if="recordingStore.logs.length > 0"
+              @click="clearLogs"
+              class="text-xs bg-white/20 hover:bg-white/30 px-2 py-0.5 rounded"
+            >
+              クリア
+            </button>
+          </div>
+          <div class="space-y-2 max-h-40 overflow-y-auto">
+            <div
+              v-for="log in recordingStore.logs"
+              :key="log.id"
+              :class="[
+                'text-xs p-2 rounded',
+                log.type === 'posted' ? 'bg-green-500/20 text-green-200' : 'bg-blue-500/20 text-blue-200'
+              ]"
+            >
+              <span class="opacity-60 mr-1">{{ formatTime(log.timestamp) }}</span>
+              {{ log.text.slice(0, 100) }}{{ log.text.length > 100 ? '...' : '' }}
+            </div>
+            <div v-if="recordingStore.logs.length === 0" class="text-xs opacity-50 text-center py-2">
+              ログなし
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <!-- Settings Tab -->
@@ -187,6 +217,21 @@ async function toggleRecording() {
   }
 }
 
+function formatTime(timestamp: number): string {
+  return new Date(timestamp).toLocaleTimeString('ja-JP', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+}
+
+function clearLogs() {
+  recordingStore.clearLogs();
+  if (typeof chrome !== 'undefined' && chrome.storage) {
+    chrome.storage.local.set({ transcriptLogs: [] });
+  }
+}
+
 onMounted(async () => {
   // Chrome Extension API をチェック
   appStore.checkChromeApi();
@@ -195,6 +240,7 @@ onMounted(async () => {
   if (appStore.chromeApiAvailable) {
     await appStore.loadSettings();
     await recordingStore.fetchStatus();
+    recordingStore.setupLogListener();
   }
 
   // 設定が未完了の場合は設定タブを表示

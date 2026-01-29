@@ -1,9 +1,16 @@
 import { defineStore } from 'pinia';
-import { ref } from 'vue';
+import { ref, onUnmounted } from 'vue';
 import type {
   RecordingStatusResponse,
   GenericResponse,
 } from '@/shared/types/messages';
+
+export interface TranscriptLog {
+  id: string;
+  text: string;
+  type: 'posted' | 'buffer';
+  timestamp: number;
+}
 
 export const useRecordingStore = defineStore('recording', () => {
   // State
@@ -14,6 +21,7 @@ export const useRecordingStore = defineStore('recording', () => {
   const error = ref<string | null>(null);
   const isLoading = ref(false);
   const recordingDuration = ref(0);
+  const logs = ref<TranscriptLog[]>([]);
   let durationTimer: ReturnType<typeof setInterval> | null = null;
 
   // タイマーを開始
@@ -139,6 +147,41 @@ export const useRecordingStore = defineStore('recording', () => {
     error.value = null;
   }
 
+  function addLog(text: string, type: 'posted' | 'buffer'): void {
+    logs.value.unshift({
+      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      text,
+      type,
+      timestamp: Date.now(),
+    });
+    // 最大50件に制限
+    if (logs.value.length > 50) {
+      logs.value = logs.value.slice(0, 50);
+    }
+  }
+
+  function clearLogs(): void {
+    logs.value = [];
+  }
+
+  // storage の変更を監視してログを更新
+  function setupLogListener(): void {
+    if (typeof chrome !== 'undefined' && chrome.storage) {
+      chrome.storage.onChanged.addListener((changes) => {
+        if (changes.transcriptLogs) {
+          const newLogs = changes.transcriptLogs.newValue || [];
+          logs.value = newLogs;
+        }
+      });
+      // 初期読み込み
+      chrome.storage.local.get(['transcriptLogs'], (result) => {
+        if (result.transcriptLogs) {
+          logs.value = result.transcriptLogs;
+        }
+      });
+    }
+  }
+
   return {
     // State
     isRecording,
@@ -147,6 +190,7 @@ export const useRecordingStore = defineStore('recording', () => {
     hasMic,
     error,
     isLoading,
+    logs,
 
     // Computed
     recordingDuration,
@@ -156,5 +200,8 @@ export const useRecordingStore = defineStore('recording', () => {
     startRecording,
     stopRecording,
     clearError,
+    addLog,
+    clearLogs,
+    setupLogListener,
   };
 });
