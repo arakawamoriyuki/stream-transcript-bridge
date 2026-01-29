@@ -36,6 +36,7 @@ export class AudioMixer {
   private chunkStartTime: number = 0;
   private isRecording: boolean = false;
   private chunkCounter: number = 0;
+  private chunkTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor(options: AudioMixerOptions = {}) {
     this.chunkDuration = options.chunkDuration ?? DEFAULT_CHUNK_DURATION;
@@ -134,7 +135,6 @@ export class AudioMixer {
           duration: this.chunkDuration / 1000, // 秒に変換
         };
         this.onChunk(chunk);
-        this.chunkStartTime = Date.now();
       }
     };
 
@@ -150,12 +150,23 @@ export class AudioMixer {
       console.log('[AudioMixer] MediaRecorder 停止');
     };
 
-    // チャンク間隔で録音データを取得
-    console.log('[AudioMixer] MediaRecorder 開始 チャンク間隔:', this.chunkDuration);
-    this.mediaRecorder.start(this.chunkDuration);
+    // 録音開始
+    console.log('[AudioMixer] 録音開始 チャンク間隔:', this.chunkDuration);
+    this.chunkStartTime = Date.now();
+    this.mediaRecorder.start();
     this.isRecording = true;
 
-    console.log('[AudioMixer] 録音開始 状態:', this.mediaRecorder.state);
+    // チャンク間隔でMediaRecorderを再起動（各チャンクが独立したファイルになる）
+    this.chunkTimer = setInterval(() => {
+      if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
+        console.log('[AudioMixer] チャンク区切り - MediaRecorder 再起動');
+        this.mediaRecorder.stop();
+        this.chunkStartTime = Date.now();
+        this.mediaRecorder.start();
+      }
+    }, this.chunkDuration);
+
+    console.log('[AudioMixer] 録音開始完了 状態:', this.mediaRecorder.state);
   }
 
   /**
@@ -165,6 +176,12 @@ export class AudioMixer {
     if (!this.isRecording || !this.mediaRecorder) {
       console.warn('[AudioMixer] 録音していません');
       return;
+    }
+
+    // タイマーをクリア
+    if (this.chunkTimer) {
+      clearInterval(this.chunkTimer);
+      this.chunkTimer = null;
     }
 
     this.mediaRecorder.stop();
