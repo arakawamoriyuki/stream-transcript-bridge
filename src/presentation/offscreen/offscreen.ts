@@ -14,6 +14,7 @@ import type {
 } from '@/shared/types/messages';
 
 let audioMixer: AudioMixer | null = null;
+let tabAudioElement: HTMLAudioElement | null = null;
 
 /**
  * 音声キャプチャを開始
@@ -38,6 +39,12 @@ async function startCapture(streamId: string): Promise<void> {
       tracks: tabStream.getTracks().length,
       trackSettings: tabStream.getAudioTracks()[0]?.getSettings(),
     });
+
+    // タブ音声を再生（ユーザーが聞けるように）
+    tabAudioElement = new Audio();
+    tabAudioElement.srcObject = tabStream;
+    tabAudioElement.play();
+    console.log('[Offscreen] タブ音声再生開始');
 
     // Mic Audio を取得（オプション）
     let micStream: MediaStream | null = null;
@@ -122,6 +129,13 @@ async function startCapture(streamId: string): Promise<void> {
  */
 function stopCapture(): void {
   console.log('[Offscreen] キャプチャ停止中');
+
+  // タブ音声再生を停止
+  if (tabAudioElement) {
+    tabAudioElement.pause();
+    tabAudioElement.srcObject = null;
+    tabAudioElement = null;
+  }
 
   if (audioMixer) {
     audioMixer.dispose();
