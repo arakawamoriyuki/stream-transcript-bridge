@@ -37,17 +37,17 @@
 
       <div>
         <label for="translationPrompt" class="block text-sm font-medium mb-1">
-          翻訳プロンプト
+          Prompt
         </label>
         <textarea
           id="translationPrompt"
           v-model="formData.translationPrompt"
           rows="5"
-          placeholder="翻訳の指示を入力..."
+          placeholder="GPTへの指示を入力..."
           class="w-full px-3 py-2 bg-white/10 border border-white/20 rounded text-white placeholder-white/50 focus:outline-none focus:border-white/40 text-sm"
         ></textarea>
         <p class="text-white/50 text-xs mt-1">
-          GPTへの翻訳指示。{text}に原文が入ります。
+          文字起こし結果を処理するGPTへの指示
         </p>
       </div>
 
