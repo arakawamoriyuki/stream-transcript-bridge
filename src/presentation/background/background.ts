@@ -14,23 +14,95 @@ import type {
   CaptureStatusMessage,
 } from '@/shared/types/messages';
 import { WhisperClient } from '@/infrastructure/openai/WhisperClient';
+import { GptClient } from '@/infrastructure/openai/GptClient';
+import { SlackClient } from '@/infrastructure/slack/SlackClient';
 import { TranscriptBufferManager } from '@/application/usecases/TranscriptBufferManager';
 
-// Whisper クライアント（API キー設定後に初期化）
+// クライアント（API キー設定後に初期化）
 let whisperClient: WhisperClient | null = null;
+let gptClient: GptClient | null = null;
+let slackClient: SlackClient | null = null;
 
 // バッファマネージャ
 const bufferManager = new TranscriptBufferManager();
 
 // 文章完成時のコールバックを設定
-bufferManager.setOnSentenceComplete((sentence) => {
+bufferManager.setOnSentenceComplete(async (sentence) => {
   console.log('Background: Sentence completed', {
     text: sentence.text,
     timestamp: sentence.timestamp,
   });
 
-  // TODO: GPT API で翻訳・要約し、Slack に投稿（Phase 8 で実装）
+  // GPT で翻訳し、Slack に投稿
+  await processAndPostToSlack(sentence.text);
 });
+
+/**
+ * 文章を翻訳して Slack に投稿
+ */
+async function processAndPostToSlack(text: string): Promise<void> {
+  try {
+    // クライアントを初期化
+    await initClients();
+
+    if (!slackClient) {
+      console.warn('Background: Slack client not available');
+      return;
+    }
+
+    let translatedText: string | undefined;
+
+    // GPT で翻訳（英語の場合のみ）
+    if (gptClient && /^[a-zA-Z\s.,!?'"()-]+$/.test(text)) {
+      try {
+        const result = await gptClient.translate(text);
+        translatedText = result.translatedText;
+        console.log('Background: Translated', { original: text, translated: translatedText });
+      } catch (error) {
+        console.error('Background: Translation failed', error);
+      }
+    }
+
+    // Slack に投稿
+    await slackClient.postTranscript(text, translatedText);
+    console.log('Background: Posted to Slack');
+  } catch (error) {
+    console.error('Background: Failed to post to Slack', error);
+  }
+}
+
+/**
+ * クライアントを初期化
+ */
+async function initClients(): Promise<void> {
+  try {
+    const result = await chrome.storage.local.get(['openaiApiKey', 'slackWebhookUrl']);
+
+    if (result.openaiApiKey) {
+      if (!whisperClient) {
+        whisperClient = new WhisperClient(result.openaiApiKey);
+      } else {
+        whisperClient.setApiKey(result.openaiApiKey);
+      }
+
+      if (!gptClient) {
+        gptClient = new GptClient(result.openaiApiKey);
+      } else {
+        gptClient.setApiKey(result.openaiApiKey);
+      }
+    }
+
+    if (result.slackWebhookUrl) {
+      if (!slackClient) {
+        slackClient = new SlackClient(result.slackWebhookUrl);
+      } else {
+        slackClient.setWebhookUrl(result.slackWebhookUrl);
+      }
+    }
+  } catch (error) {
+    console.error('Background: Failed to init clients', error);
+  }
+}
 
 // 録音状態
 let recordingState: RecordingState = {
@@ -211,32 +283,6 @@ function getRecordingStatus(): RecordingStatusResponse {
 }
 
 /**
- * Whisper クライアントを初期化（API キーを取得して設定）
- */
-async function initWhisperClient(): Promise<WhisperClient | null> {
-  try {
-    const result = await chrome.storage.local.get(['openaiApiKey']);
-    const apiKey = result.openaiApiKey;
-
-    if (!apiKey) {
-      console.warn('Background: OpenAI API key not configured');
-      return null;
-    }
-
-    if (!whisperClient) {
-      whisperClient = new WhisperClient(apiKey);
-    } else {
-      whisperClient.setApiKey(apiKey);
-    }
-
-    return whisperClient;
-  } catch (error) {
-    console.error('Background: Failed to init Whisper client', error);
-    return null;
-  }
-}
-
-/**
  * AudioChunk を処理して Whisper API に送信
  */
 async function handleAudioChunk(message: AudioChunkMessage): Promise<void> {
@@ -247,9 +293,9 @@ async function handleAudioChunk(message: AudioChunkMessage): Promise<void> {
     size: message.data.byteLength,
   });
 
-  // Whisper クライアントを初期化
-  const client = await initWhisperClient();
-  if (!client) {
+  // クライアントを初期化
+  await initClients();
+  if (!whisperClient) {
     console.warn('Background: Skipping transcription - Whisper client not available');
     return;
   }
@@ -259,7 +305,7 @@ async function handleAudioChunk(message: AudioChunkMessage): Promise<void> {
     const blob = new Blob([message.data], { type: 'audio/webm' });
 
     // Whisper API に送信
-    const response = await client.transcribe({
+    const response = await whisperClient.transcribe({
       id: message.chunkId,
       data: blob,
       timestamp: message.timestamp,
