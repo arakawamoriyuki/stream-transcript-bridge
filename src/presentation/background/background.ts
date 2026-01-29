@@ -26,15 +26,16 @@ let slackClient: SlackClient | null = null;
 // バッファマネージャ
 const bufferManager = new TranscriptBufferManager();
 
-// 文章完成時のコールバックを設定
-bufferManager.setOnSentenceComplete(async (sentence) => {
+// チャンクごとの完成文章を一時的に保持
+let pendingSentences: string[] = [];
+
+// 文章完成時のコールバックを設定（一時配列に追加）
+bufferManager.setOnSentenceComplete((sentence) => {
   console.log('[Background] 文章完成', {
     text: sentence.text,
     timestamp: sentence.timestamp,
   });
-
-  // GPT で翻訳し、Slack に投稿
-  await processAndPostToSlack(sentence.text);
+  pendingSentences.push(sentence.text);
 });
 
 /**
@@ -248,7 +249,15 @@ async function stopRecording(): Promise<GenericResponse> {
     });
 
     // バッファをフラッシュ（未完成の文章も出力）
+    pendingSentences = [];
     bufferManager.flush();
+
+    // 残りの文章があれば投稿
+    if (pendingSentences.length > 0) {
+      const combinedText = pendingSentences.join(' ');
+      console.log('[Background] 残りの文章を投稿', { text: combinedText });
+      await processAndPostToSlack(combinedText);
+    }
 
     // 状態をリセット
     recordingState = {
@@ -331,7 +340,21 @@ async function handleAudioChunk(message: {
 
     // バッファマネージャに渡して文章完成判定
     if (response.text) {
+      // 一時配列をクリア
+      pendingSentences = [];
+
+      // 文章完成判定（完成した文章は pendingSentences に追加される）
       bufferManager.processTranscript(response.text, message.timestamp);
+
+      // 完成した文章をまとめて Slack に投稿
+      if (pendingSentences.length > 0) {
+        const combinedText = pendingSentences.join(' ');
+        console.log('[Background] まとめて投稿', {
+          sentences: pendingSentences.length,
+          text: combinedText,
+        });
+        await processAndPostToSlack(combinedText);
+      }
     }
   } catch (error) {
     console.error('[Background] 文字起こし失敗', error);
